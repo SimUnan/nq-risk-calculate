@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { ModeToggle } from "@/components/mode-toggle";
 import { PositionCalculator } from "@/components/calculator/position-calculator";
@@ -10,6 +10,7 @@ import { usePositionCalculator } from "@/hooks/use-position-calculator";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Book } from "lucide-react";
 import Link from "next/link";
+import { useEffect } from "react";
 
 export default function Home() {
   const {
@@ -40,6 +41,15 @@ export default function Home() {
 
   const result = calculatePositionSize();
 
+  useEffect(() => {
+    const fetchSessions = async () => {
+      const response = await fetch(`/api/test-connection`);
+      const data = await response.json();
+      console.log(data);
+    }
+    fetchSessions();
+  },[])
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -49,11 +59,15 @@ export default function Home() {
               <TrendingUp className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">NQ Position Calculator</h1>
-              <p className="text-muted-foreground">Calculate optimal position sizes for futures trading</p>
+              <h1 className="text-3xl font-bold tracking-tight">
+                NQ Position Calculator
+              </h1>
+              <p className="text-muted-foreground">
+                Calculate optimal position sizes for futures trading
+              </p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <Link href="/journal">
               <Button variant="outline" className="gap-2">
@@ -85,9 +99,9 @@ export default function Home() {
             />
 
             {result && (
-              <PositionResults 
-                result={result} 
-                contractType={contractType} 
+              <PositionResults
+                result={result}
+                contractType={contractType}
                 onSave={saveSession}
                 isSaving={isSaving}
               />
@@ -99,7 +113,7 @@ export default function Home() {
             <TradeNotes notes={notes} setNotes={setNotes} />
           </div>
         </div>
-        
+
         <SuccessDialog
           open={showSuccessDialog}
           onClose={() => setShowSuccessDialog(false)}

@@ -9,7 +9,7 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
-    await connectDB();
+    // await connectDB();
     
     const session = await TradingSession.findById(id).lean();
     

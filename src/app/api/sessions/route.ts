@@ -5,7 +5,7 @@ import TradingSession from '@/models/TradingSession';
 // GET - Fetch trading sessions by date
 export async function GET(request: NextRequest) {
   try {
-    await connectDB();
+    // await connectDB();
     
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');

@@ -5,7 +5,7 @@ import TradingSession from '@/models/TradingSession';
 // GET - Fetch session summaries for calendar view
 export async function GET(request: NextRequest) {
   try {
-    await connectDB();
+    // await connectDB();
     
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month');
