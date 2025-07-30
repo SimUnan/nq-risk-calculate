@@ -177,23 +177,7 @@ export default function JournalPage() {
             loading={sessionsLoading}
           />
         </div>
-        
-        {sessions.length === 0 && (
-          <div className="text-center py-16">
-            <TrendingUp className="h-16 w-16 mx-auto mb-6 opacity-50" />
-            <h2 className="text-2xl font-semibold mb-4">No Trading Sessions Yet</h2>
-            <p className="text-muted-foreground mb-6">
-              Start by saving your first trading session from the calculator!
-            </p>
-            <Link href="/">
-              <Button className="gap-2">
-                <Calculator className="h-4 w-4" />
-                Go to Calculator
-              </Button>
-            </Link>
-          </div>
-        )}
-      </div>
+              </div>
       
       <AlertComponent />
       <ConfirmComponent />

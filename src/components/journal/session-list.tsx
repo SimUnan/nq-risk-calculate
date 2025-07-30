@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { useAlertModal } from '@/components/ui/alert-modal';
 import { DeleteSessionDialog } from "./delete-session-dialog";
 import { EditSessionDialog } from "./edit-session-dialog";
-import { Edit, Trash2, TrendingUp, DollarSign } from "lucide-react";
+import { Edit, Trash2, TrendingUp, DollarSign, Calculator } from "lucide-react";
 import { ITradingSession } from "@/models/TradingSession";
 import { formatDate, formatDateShort } from "@/utils/date-helpers";
+import Link from 'next/link';
 
 interface SessionListProps {
   sessions: ITradingSession[];
@@ -136,10 +137,18 @@ export function SessionList({ sessions, selectedDate, loading, onEdit, onDelete,
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No trading sessions found{selectedDate ? ' for this date' : ''}.</p>
-            <p className="text-sm mt-2">Start by saving a session from the calculator!</p>
+          <div className="text-center py-16">
+            <TrendingUp className="h-16 w-16 mx-auto mb-6 opacity-50" />
+            <h2 className="text-2xl font-semibold mb-4">No Trading Sessions Yet</h2>
+            <p className="text-muted-foreground mb-6">
+              Start by saving your first trading session from the calculator!
+            </p>
+            <Link href="/">
+              <Button className="gap-2">
+                <Calculator className="h-4 w-4" />
+                Go to Calculator
+              </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>
