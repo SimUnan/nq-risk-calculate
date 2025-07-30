@@ -4,18 +4,31 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { ModeToggle } from "@/components/mode-toggle";
-import { TrendingUp, DollarSign, Calculator, Target, Hash } from "lucide-react";
+import { TrendingUp, DollarSign, Calculator, Target, Hash, CheckSquare, FileText } from "lucide-react";
 
 export default function Home() {
   const [riskAmount, setRiskAmount] = useState('');
   const [entryPrice, setEntryPrice] = useState('');
   const [stopPrice, setStopPrice] = useState('');
   const [ticks, setTicks] = useState('');
+  const [rrRatio, setRrRatio] = useState('');
   const [contractType, setContractType] = useState('micro');
-  const [inputMode, setInputMode] = useState<'price' | 'ticks'>('price');
+  const [inputMode, setInputMode] = useState<'price' | 'ticks'>('ticks');
+  
+  // Trading rules checklist
+  const [rules, setRules] = useState({
+    followRules: false,
+    noFastEntry: false,
+    waitConfirmation: false,
+    bePlatient: false,
+  });
+  
+  // Notes
+  const [notes, setNotes] = useState('');
 
   const calculatePositionSize = () => {
     const risk = parseFloat(riskAmount);
@@ -40,16 +53,25 @@ export default function Home() {
     const riskPerContract = pointsRisk * dollarsPerPoint;
     const contracts = Math.floor(risk / riskPerContract);
 
+    const rr = parseFloat(rrRatio);
+    const profitTarget = rr ? contracts * riskPerContract * rr : null;
+
     return {
       contracts,
       riskAmount: risk,
       pointsRisk,
       riskPerContract,
-      totalRisk: contracts * riskPerContract
+      totalRisk: contracts * riskPerContract,
+      profitTarget,
+      rrRatio: rr
     };
   };
 
   const result = calculatePositionSize();
+
+  const handleRuleChange = (rule: keyof typeof rules, checked: boolean) => {
+    setRules(prev => ({ ...prev, [rule]: checked }));
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
@@ -67,7 +89,8 @@ export default function Home() {
           <ModeToggle />
         </div>
 
-        <div className="max-w-2xl mx-auto grid gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
           <Card className="shadow-lg border-0 bg-card/50 backdrop-blur">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -80,10 +103,20 @@ export default function Home() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="risk-amount" className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  Risk Amount ($)
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="risk-amount" className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    Risk Amount ($)
+                  </Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setRiskAmount('350')}
+                    className="text-xs px-3 py-1"
+                  >
+                    $350
+                  </Button>
+                </div>
                 <Input
                   id="risk-amount"
                   type="number"
@@ -94,17 +127,28 @@ export default function Home() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="contract-type">Contract Type</Label>
-                <Select value={contractType} onValueChange={setContractType}>
-                  <SelectTrigger className="text-lg">
-                    <SelectValue placeholder="Select contract type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="micro">Micro NQ (MNQ) - $2/point</SelectItem>
-                    <SelectItem value="mini">Mini NQ (NQ) - $20/point</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Contract Type</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={contractType === 'micro' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setContractType('micro')}
+                      className="gap-2"
+                    >
+                      MNQ - $2/point
+                    </Button>
+                    <Button
+                      variant={contractType === 'mini' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setContractType('mini')}
+                      className="gap-2"
+                    >
+                      NQ - $20/point
+                    </Button>
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -180,6 +224,19 @@ export default function Home() {
                   </div>
                 )}
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="rr-ratio">Risk:Reward Ratio (optional)</Label>
+                <Input
+                  id="rr-ratio"
+                  type="number"
+                  step="0.1"
+                  value={rrRatio}
+                  onChange={(e) => setRrRatio(e.target.value)}
+                  placeholder="e.g., 2 (for 1:2 RR)"
+                  className="text-lg"
+                />
+              </div>
             </CardContent>
           </Card>
 
@@ -223,13 +280,103 @@ export default function Home() {
                     
                     <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
                       <span className="text-sm font-medium text-muted-foreground">Actual Risk</span>
-                      <span className="text-lg font-semibold">${result.totalRisk.toFixed(2)}</span>
+                      <span className="text-lg font-semibold text-red-500">${result.totalRisk.toFixed(2)}</span>
                     </div>
+                    
+                    {result.profitTarget && (
+                      <div className="flex justify-between items-center p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                        <span className="text-sm font-medium text-muted-foreground">Profit Target ({result.rrRatio}:1 RR)</span>
+                        <span className="text-lg font-semibold text-green-500">${result.profitTarget.toFixed(2)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
             </Card>
           )}
+          </div>
+
+          {/* Right sidebar with rules and notes */}
+          <div className="space-y-6">
+            {/* Trading Rules Card */}
+            <Card className="shadow-lg border-0 bg-card/50 backdrop-blur">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckSquare className="h-5 w-5" />
+                  Trading Rules
+                </CardTitle>
+                <CardDescription>
+                  Check off your rules before trading
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="follow-rules"
+                    checked={rules.followRules}
+                    onCheckedChange={(checked) => handleRuleChange('followRules', checked as boolean)}
+                  />
+                  <Label htmlFor="follow-rules" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Follow your rules
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="no-fast-entry"
+                    checked={rules.noFastEntry}
+                    onCheckedChange={(checked) => handleRuleChange('noFastEntry', checked as boolean)}
+                  />
+                  <Label htmlFor="no-fast-entry" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    No fast entry
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="wait-confirmation"
+                    checked={rules.waitConfirmation}
+                    onCheckedChange={(checked) => handleRuleChange('waitConfirmation', checked as boolean)}
+                  />
+                  <Label htmlFor="wait-confirmation" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Wait for confirmation to form
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="be-patient"
+                    checked={rules.bePlatient}
+                    onCheckedChange={(checked) => handleRuleChange('bePlatient', checked as boolean)}
+                  />
+                  <Label htmlFor="be-patient" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Be patient
+                  </Label>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Notes Card */}
+            <Card className="shadow-lg border-0 bg-card/50 backdrop-blur">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Trade Notes
+                </CardTitle>
+                <CardDescription>
+                  Document your trade setup and observations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  placeholder="e.g., 1. Pattern formed at support&#10;2. Volume confirmation&#10;3. RSI oversold..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="min-h-[200px] resize-none"
+                />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
