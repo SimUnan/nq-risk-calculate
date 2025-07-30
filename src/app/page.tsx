@@ -1,103 +1,237 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/components/mode-toggle";
+import { TrendingUp, DollarSign, Calculator, Target, Hash } from "lucide-react";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [riskAmount, setRiskAmount] = useState('');
+  const [entryPrice, setEntryPrice] = useState('');
+  const [stopPrice, setStopPrice] = useState('');
+  const [ticks, setTicks] = useState('');
+  const [contractType, setContractType] = useState('micro');
+  const [inputMode, setInputMode] = useState<'price' | 'ticks'>('price');
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const calculatePositionSize = () => {
+    const risk = parseFloat(riskAmount);
+
+    if (!risk) return null;
+
+    let pointsRisk: number;
+
+    if (inputMode === 'ticks') {
+      const ticksValue = parseFloat(ticks);
+      if (!ticksValue) return null;
+      pointsRisk = ticksValue;
+    } else {
+      const entry = parseFloat(entryPrice);
+      const stop = parseFloat(stopPrice);
+      if (!entry || !stop) return null;
+      pointsRisk = Math.abs(entry - stop);
+    }
+    
+    const dollarsPerPoint = contractType === 'micro' ? 2 : 20;
+    
+    const riskPerContract = pointsRisk * dollarsPerPoint;
+    const contracts = Math.floor(risk / riskPerContract);
+
+    return {
+      contracts,
+      riskAmount: risk,
+      pointsRisk,
+      riskPerContract,
+      totalRisk: contracts * riskPerContract
+    };
+  };
+
+  const result = calculatePositionSize();
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <TrendingUp className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">NQ Position Calculator</h1>
+              <p className="text-muted-foreground">Calculate optimal position sizes for futures trading</p>
+            </div>
+          </div>
+          <ModeToggle />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <div className="max-w-2xl mx-auto grid gap-6">
+          <Card className="shadow-lg border-0 bg-card/50 backdrop-blur">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calculator className="h-5 w-5" />
+                Trading Parameters
+              </CardTitle>
+              <CardDescription>
+                Enter your risk amount and trade setup
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="risk-amount" className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Risk Amount ($)
+                </Label>
+                <Input
+                  id="risk-amount"
+                  type="number"
+                  value={riskAmount}
+                  onChange={(e) => setRiskAmount(e.target.value)}
+                  placeholder="e.g., 300"
+                  className="text-lg"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contract-type">Contract Type</Label>
+                <Select value={contractType} onValueChange={setContractType}>
+                  <SelectTrigger className="text-lg">
+                    <SelectValue placeholder="Select contract type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="micro">Micro NQ (MNQ) - $2/point</SelectItem>
+                    <SelectItem value="mini">Mini NQ (NQ) - $20/point</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Risk Input Method</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={inputMode === 'price' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setInputMode('price')}
+                      className="gap-2"
+                    >
+                      <Target className="h-4 w-4" />
+                      Price Range
+                    </Button>
+                    <Button
+                      variant={inputMode === 'ticks' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setInputMode('ticks')}
+                      className="gap-2"
+                    >
+                      <Hash className="h-4 w-4" />
+                      Ticks
+                    </Button>
+                  </div>
+                </div>
+
+                {inputMode === 'price' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="entry-price" className="flex items-center gap-2">
+                        <Target className="h-4 w-4" />
+                        Entry Price
+                      </Label>
+                      <Input
+                        id="entry-price"
+                        type="number"
+                        step="0.25"
+                        value={entryPrice}
+                        onChange={(e) => setEntryPrice(e.target.value)}
+                        placeholder="e.g., 18500.00"
+                        className="text-lg"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="stop-price">Stop Loss Price</Label>
+                      <Input
+                        id="stop-price"
+                        type="number"
+                        step="0.25"
+                        value={stopPrice}
+                        onChange={(e) => setStopPrice(e.target.value)}
+                        placeholder="e.g., 18450.00"
+                        className="text-lg"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor="ticks" className="flex items-center gap-2">
+                      <Hash className="h-4 w-4" />
+                      Number of Ticks
+                    </Label>
+                    <Input
+                      id="ticks"
+                      type="number"
+                      value={ticks}
+                      onChange={(e) => setTicks(e.target.value)}
+                      placeholder="e.g., 15"
+                      className="text-lg"
+                    />
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {result && (
+            <Card className="shadow-lg border-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 backdrop-blur">
+              <CardHeader>
+                <CardTitle className="text-2xl">Position Size Results</CardTitle>
+                <CardDescription>
+                  Based on your risk parameters
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm font-medium text-muted-foreground">Risk Amount</span>
+                      <span className="text-lg font-semibold">${result.riskAmount.toFixed(2)}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm font-medium text-muted-foreground">Points at Risk</span>
+                      <span className="text-lg font-semibold">{result.pointsRisk.toFixed(2)}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm font-medium text-muted-foreground">Risk per Contract</span>
+                      <span className="text-lg font-semibold">${result.riskPerContract.toFixed(2)}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="p-6 bg-primary/10 rounded-xl border-2 border-primary/20">
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-muted-foreground mb-2">Contracts to Trade</p>
+                        <p className="text-4xl font-bold text-primary mb-2">{result.contracts}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {contractType === 'micro' ? 'Micro NQ (MNQ)' : 'Mini NQ (NQ)'}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm font-medium text-muted-foreground">Actual Risk</span>
+                      <span className="text-lg font-semibold">${result.totalRisk.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
