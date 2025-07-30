@@ -46,22 +46,28 @@ export async function PUT(
     
     const body = await request.json();
     
+    // Build update object, only including fields that are provided
+    const updateData: any = {};
+    
+    if (body.riskAmount !== undefined) updateData.riskAmount = body.riskAmount;
+    if (body.contractType !== undefined) updateData.contractType = body.contractType;
+    if (body.inputMode !== undefined) updateData.inputMode = body.inputMode;
+    if (body.entryPrice !== undefined) updateData.entryPrice = body.entryPrice;
+    if (body.stopPrice !== undefined) updateData.stopPrice = body.stopPrice;
+    if (body.ticks !== undefined) updateData.ticks = body.ticks;
+    if (body.rrRatio !== undefined) updateData.rrRatio = body.rrRatio;
+    if (body.calculatedContracts !== undefined) updateData.calculatedContracts = body.calculatedContracts;
+    if (body.actualRisk !== undefined) updateData.actualRisk = body.actualRisk;
+    if (body.profitTarget !== undefined) updateData.profitTarget = body.profitTarget;
+    if (body.actualProfit !== undefined) updateData.actualProfit = body.actualProfit;
+    if (body.tradeStatus !== undefined) updateData.tradeStatus = body.tradeStatus;
+    if (body.exitPrice !== undefined) updateData.exitPrice = body.exitPrice;
+    if (body.tradingRules !== undefined) updateData.tradingRules = body.tradingRules;
+    if (body.notes !== undefined) updateData.notes = body.notes;
+
     const updatedSession = await TradingSession.findByIdAndUpdate(
       id,
-      {
-        riskAmount: body.riskAmount,
-        contractType: body.contractType,
-        inputMode: body.inputMode,
-        entryPrice: body.entryPrice,
-        stopPrice: body.stopPrice,
-        ticks: body.ticks,
-        rrRatio: body.rrRatio,
-        calculatedContracts: body.calculatedContracts,
-        actualRisk: body.actualRisk,
-        profitTarget: body.profitTarget,
-        tradingRules: body.tradingRules,
-        notes: body.notes,
-      },
+      updateData,
       { new: true, runValidators: true }
     );
     

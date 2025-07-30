@@ -86,6 +86,10 @@ export function usePositionCalculator() {
         calculatedContracts: result.contracts,
         actualRisk: result.totalRisk,
         profitTarget: result.profitTarget,
+        // New fields for actual trade results (default to pending until user updates)
+        actualProfit: undefined, // Will be set when user edits the session
+        tradeStatus: 'pending' as const,
+        exitPrice: undefined,
         tradingRules: rules,
         notes,
       };

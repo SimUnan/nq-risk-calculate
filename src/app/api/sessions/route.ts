@@ -33,10 +33,13 @@ export async function GET(request: NextRequest) {
       .sort({ createdAt: -1 }) // Most recent first
       .lean();
     
-    // Calculate summary statistics for the sessions
+    // Calculate summary statistics using ONLY actual P&L data
     const totalProfit = sessions.reduce((sum, session) => {
-      // If session has profit target, use it; otherwise use negative actual risk (loss)
-      return sum + (session.profitTarget || -session.actualRisk);
+      // Only include sessions with actual P&L data
+      if (session.actualProfit !== undefined && session.actualProfit !== null) {
+        return sum + session.actualProfit;
+      }
+      return sum;
     }, 0);
     
     return NextResponse.json({
@@ -80,6 +83,10 @@ export async function POST(request: NextRequest) {
       calculatedContracts: body.calculatedContracts,
       actualRisk: body.actualRisk,
       profitTarget: body.profitTarget,
+      // New fields for actual trade results
+      actualProfit: body.actualProfit,
+      tradeStatus: body.tradeStatus || 'pending',
+      exitPrice: body.exitPrice,
       tradingRules: body.tradingRules,
       notes: body.notes || '',
     });

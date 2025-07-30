@@ -4,7 +4,9 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useAlertModal } from '@/components/ui/alert-modal';
 import { DeleteSessionDialog } from "./delete-session-dialog";
+import { EditSessionDialog } from "./edit-session-dialog";
 import { Edit, Trash2, TrendingUp, DollarSign } from "lucide-react";
 import { ITradingSession } from "@/models/TradingSession";
 import { formatDate, formatDateShort } from "@/utils/date-helpers";
@@ -15,11 +17,16 @@ interface SessionListProps {
   loading?: boolean;
   onEdit: (session: ITradingSession) => void;
   onDelete: (sessionId: string) => void;
+  onRefresh?: () => void;
 }
 
-export function SessionList({ sessions, selectedDate, loading, onEdit, onDelete }: SessionListProps) {
+export function SessionList({ sessions, selectedDate, loading, onEdit, onDelete, onRefresh }: SessionListProps) {
   const [sessionToDelete, setSessionToDelete] = useState<ITradingSession | null>(null);
+  const [sessionToEdit, setSessionToEdit] = useState<ITradingSession | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const { showAlert, AlertComponent } = useAlertModal();
 
   // Filter sessions by selected date
   const filteredSessions = selectedDate
@@ -32,6 +39,51 @@ export function SessionList({ sessions, selectedDate, loading, onEdit, onDelete 
   const sortedSessions = filteredSessions.sort((a, b) => 
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
+
+  const handleEditClick = (session: ITradingSession) => {
+    setSessionToEdit(session);
+  };
+
+  const handleEditSave = async (sessionId: string, updatedData: Partial<ITradingSession>) => {
+    console.log('handleEditSave called with:', { sessionId, updatedData });
+    
+    setIsSaving(true);
+    try {
+      console.log('Making PUT request to:', `/api/sessions/${sessionId}`);
+      
+      const response = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedData),
+      });
+
+      console.log('Response status:', response.status);
+      
+      const data = await response.json();
+      console.log('Response data:', data);
+
+      if (data.success) {
+        console.log('Update successful, closing dialog and refreshing');
+        setSessionToEdit(null);
+        if (onRefresh) {
+          onRefresh();
+        }
+      } else {
+        throw new Error(data.message || 'Failed to update session');
+      }
+    } catch (error) {
+      console.error('Edit failed:', error);
+      showAlert('Error', 'Failed to update session. Please try again.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditCancel = () => {
+    setSessionToEdit(null);
+  };
 
   const handleDeleteClick = (session: ITradingSession) => {
     setSessionToDelete(session);
@@ -105,7 +157,7 @@ export function SessionList({ sessions, selectedDate, loading, onEdit, onDelete 
           </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className={`space-y-4 ${sortedSessions.length > 2 ? 'max-h-[600px] overflow-y-auto pr-2' : ''}`}>
         {sortedSessions.map((session) => (
           <div
             key={session._id?.toString()}
@@ -124,13 +176,23 @@ export function SessionList({ sessions, selectedDate, loading, onEdit, onDelete 
                     {session.rrRatio}:1 RR
                   </Badge>
                 )}
+                {session.tradeStatus && session.tradeStatus !== 'pending' && (
+                  <Badge variant="outline" className={
+                    session.tradeStatus === 'win' ? 'text-green-600 border-green-500/30' :
+                    session.tradeStatus === 'loss' ? 'text-red-600 border-red-500/30' :
+                    session.tradeStatus === 'breakeven' ? 'text-yellow-600 border-yellow-500/30' :
+                    'text-muted-foreground'
+                  }>
+                    {session.tradeStatus.charAt(0).toUpperCase() + session.tradeStatus.slice(1)}
+                  </Badge>
+                )}
               </div>
               
-              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onEdit(session)}
+                  onClick={() => handleEditClick(session)}
                   className="gap-2 hover:bg-primary/10 hover:text-primary"
                 >
                   <Edit className="h-4 w-4" />
@@ -178,6 +240,27 @@ export function SessionList({ sessions, selectedDate, loading, onEdit, onDelete 
                   </div>
                 </div>
               )}
+              
+              {session.actualProfit !== undefined && (
+                <div className={`p-3 rounded-lg border ${
+                  session.actualProfit > 0 
+                    ? 'bg-green-500/5 border-green-500/20' 
+                    : session.actualProfit < 0 
+                    ? 'bg-red-500/5 border-red-500/20'
+                    : 'bg-muted/5 border-border/20'
+                }`}>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider">Actual P&L</div>
+                  <div className={`font-semibold text-lg mt-1 ${
+                    session.actualProfit > 0 
+                      ? 'text-green-500' 
+                      : session.actualProfit < 0 
+                      ? 'text-red-500'
+                      : 'text-muted-foreground'
+                  }`}>
+                    {session.actualProfit > 0 ? '+' : ''}${session.actualProfit.toFixed(2)}
+                  </div>
+                </div>
+              )}
             </div>
 
             {session.notes && (
@@ -211,6 +294,14 @@ export function SessionList({ sessions, selectedDate, loading, onEdit, onDelete 
           </div>
         ))}
         
+        <EditSessionDialog
+          session={sessionToEdit}
+          open={!!sessionToEdit}
+          onClose={handleEditCancel}
+          onSave={handleEditSave}
+          isSaving={isSaving}
+        />
+        
         <DeleteSessionDialog
           session={sessionToDelete}
           open={!!sessionToDelete}
@@ -218,6 +309,8 @@ export function SessionList({ sessions, selectedDate, loading, onEdit, onDelete 
           onConfirm={handleDeleteConfirm}
           isDeleting={isDeleting}
         />
+        
+        <AlertComponent />
       </CardContent>
     </Card>
   );

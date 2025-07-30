@@ -12,6 +12,11 @@ export interface ITradingSession extends Document {
   calculatedContracts?: number;
   actualRisk?: number;
   profitTarget?: number;
+  actualProfit?: number; // New: actual profit/loss from the trade
+  tradeStatus?: 'win' | 'loss' | 'breakeven' | 'pending'; // New: trade outcome
+  exitPrice?: number; // New: actual exit price
+  actualContracts?: number; // New: actual contracts traded
+  actualStopLossTicks?: number; // New: actual stop loss in ticks
   tradingRules: {
     followRules: boolean;
     noFastEntry: boolean;
@@ -50,6 +55,15 @@ const TradingSessionSchema = new Schema<ITradingSession>({
   calculatedContracts: Number,
   actualRisk: Number,
   profitTarget: Number,
+  actualProfit: Number,
+  tradeStatus: {
+    type: String,
+    enum: ['win', 'loss', 'breakeven', 'pending'],
+    default: 'pending',
+  },
+  exitPrice: Number,
+  actualContracts: Number,
+  actualStopLossTicks: Number,
   tradingRules: {
     followRules: { type: Boolean, default: false },
     noFastEntry: { type: Boolean, default: false },

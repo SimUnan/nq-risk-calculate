@@ -45,8 +45,11 @@ export async function GET(request: NextRequest) {
       }
       
       dailySummaries[dayKey].sessionCount++;
-      // If session has profit target, use it; otherwise use negative actual risk (loss)
-      dailySummaries[dayKey].totalProfit += session.profitTarget || -session.actualRisk;
+      // ONLY use actual profit/loss data, ignore estimates
+      if (session.actualProfit !== undefined && session.actualProfit !== null) {
+        dailySummaries[dayKey].totalProfit += session.actualProfit;
+      }
+      // Don't add estimated P&L - only real trade results count
     });
     
     return NextResponse.json({
